@@ -85,6 +85,66 @@ public class CreditDecisionApiTest {
     }
 
     @Test
+    @DisplayName("Functional Test: High DTI receives a high-risk decline")
+    void testHighDtiDecline() {
+        CreditApplicationRequest request = new CreditApplicationRequest(
+                "APP-HIGH-DTI-003", 680, new BigDecimal("65000"), new BigDecimal("3000"), 0.46
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .post("/api/v1/credit/evaluate")
+        .then()
+            .statusCode(200)
+            .body("status", equalTo("DECLINED"))
+            .body("riskTier", equalTo("HIGH_RISK"))
+            .body("approvedLimit", equalTo(0))
+            .body("reasons", hasItem(containsString("Debt-to-income ratio exceeds risk tolerance threshold")));
+    }
+
+    @Test
+    @DisplayName("Functional Test: Near-prime customer receives a capped credit limit")
+    void testNearPrimeLimitCap() {
+        CreditApplicationRequest request = new CreditApplicationRequest(
+                "APP-NEAR-PRIME-004", 680, new BigDecimal("75000"), new BigDecimal("5000"), 0.30
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .post("/api/v1/credit/evaluate")
+        .then()
+            .statusCode(200)
+            .body("status", equalTo("APPROVED"))
+            .body("riskTier", equalTo("NEAR_PRIME"))
+            .body("approvedLimit", equalTo(2500.0f))
+            .body("offeredApr", equalTo(22.49f));
+    }
+
+    @Test
+    @DisplayName("Boundary Test: Exact prime-score and DTI thresholds receive prime approval")
+    void testPrimeThresholds() {
+        CreditApplicationRequest request = new CreditApplicationRequest(
+                "APP-BOUNDARY-005", 720, new BigDecimal("90000"), new BigDecimal("4000"), 0.30
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .post("/api/v1/credit/evaluate")
+        .then()
+            .statusCode(200)
+            .body("status", equalTo("APPROVED"))
+            .body("riskTier", equalTo("PRIME"))
+            .body("approvedLimit", equalTo(4000.0f))
+            .body("offeredApr", equalTo(14.99f));
+    }
+
+    @Test
     @DisplayName("Negative/Boundary Test: Missing fields and score out of bounds trigger 400 Bad Request")
     void testInvalidRequestPayload() {
         // Credit score 900 exceeds maximum allowable 850
