@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Synchrony Credit Decision API Test Suite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /api/v1/credit/evaluate - Prime Approval",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains valid Decision ID and Status', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('APPROVED');",
+              "    pm.expect(jsonData.riskTier).to.eql('PRIME');",
+              "    pm.expect(jsonData.decisionId).to.be.a('string');",
+              "});",
+              "pm.test('Response latency is under 200ms', function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicantId\": \"CUST-98721\",\n  \"creditScore\": 760,\n  \"annualIncome\": 95000.00,\n  \"requestedAmount\": 5000.00,\n  \"debtToIncomeRatio\": 0.22\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/credit/evaluate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "credit", "evaluate"]
+        }
+      }
+    }
+  ]
+}
